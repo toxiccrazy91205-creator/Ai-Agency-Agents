@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}AI Agency Portal{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Motion Engine (GSAP + Lenis) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/split-type"></script>
+    <!-- Theme Pre-Initialization (Prevents Flash) -->
+    <script>
+      (function() {
+        const theme = localStorage.getItem('theme');
+        if (theme === 'light') document.documentElement.classList.remove('dark');
+      })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.19/bundled/lenis.min.js"></script>
+    <style>
+      :root {
+          /* Vercel Geist Light Tokens */
+          --geist-background: #ffffff;
+          --geist-foreground: #000000;
+          --geist-secondary: #666666;
+          --geist-muted: #888;
+          --geist-border: rgba(0, 0, 0, 0.08);
+          --geist-border-hover: rgba(0, 0, 0, 0.12);
+          --accents-1: #fafafa;
+          --accents-2: #eaeaea;
+          --accents-3: #999;
+
+          --accents-develop: #0070f3;
+          --accents-preview: #f81ce5;
+          --accents-ship: #f54133;
+
+          --font-sans: 'Inter', -apple-system, sans-serif;
+          --font-mono: 'JetBrains Mono', monospace;
+          --radius-md: 6px;
+          --radius-lg: 8px;
+
+          /* Spotlight & Motion Variables */
+          --mouse-x: 50%;
+          --mouse-y: 50%;
+          --spotlight-color: rgba(0, 112, 243, 0.05);
+          --shadow-border: 0 0 0 1px var(--geist-border);
+          --shadow-card: 0 0 0 1px var(--geist-border), 0 2px 4px rgba(0,0,0,0.02);
+          --shadow-card-hover: 0 0 0 1px var(--geist-border-hover), 0 8px 16px rgba(0,0,0,0.08);
+      }
+
+      .dark {
+          /* Vercel Geist Dark Tokens */
+          --geist-background: #000000;
+          --geist-foreground: #ffffff;
+          --geist-secondary: #888888;
+          --geist-muted: #666666;
+          --geist-border: rgba(255, 255, 255, 0.14);
+          --geist-border-hover: rgba(255, 255, 255, 0.2);
+          --accents-1: #111111;
+          --accents-2: #333333;
+          --accents-3: #444;
+          --shadow-border: 0 0 0 1px var(--geist-border);
+          --shadow-card: 0 0 0 1px var(--geist-border), 0 2px 4px rgba(255,255,255,0.02);
+          --shadow-card-hover: 0 0 0 1px var(--geist-border-hover), 0 8px 16px rgba(0,0,0,0.2);
+      }
+
+      /* Lenis Smooth Scroll */
+      html.lenis { height: auto; }
+      .lenis.lenis-smooth { scroll-behavior: auto; }
+      .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+      .lenis.lenis-stopped { overflow: hidden; }
+
+      * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+          -webkit-font-smoothing: antialiased;
+      }
+
+      body {
+          font-family: var(--font-sans);
+          background-color: var(--geist-background);
+          color: var(--geist-foreground);
+          line-height: 1.5;
+          overflow-x: hidden;
+          background-image: 
+              radial-gradient(var(--spotlight-color) 1px, transparent 1px),
+              radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), var(--spotlight-color), transparent 80%);
+          background-size: 32px 32px, 100% 100%;
+          background-attachment: fixed;
+      }
+
+      /* Grain Texture Overlay */
+      body::after {
+          content: "";
+          position: fixed;
+          top: 0; left: 0; width: 100%; height: 100%;
+          pointer-events: none;
+          z-index: 9999;
+          opacity: 0.02;
+          background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+          filter: contrast(120%) brightness(120%);
+      }
+
+      h1, h2, h3, h4 {
+          color: var(--geist-foreground);
+          font-weight: 600;
+          letter-spacing: -0.05em;
+      }
+
+      /* Cinematic Text Prep */
+      .split-parent {
+          overflow: hidden;
+          display: flex;
+          justify-content: center;
+      }
+      .split-child { display: inline-block; }
+
+      .navbar {
+          height: 64px;
+          padding: 0 24px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: var(--geist-background);
+          backdrop-filter: saturate(180%) blur(12px);
+          position: sticky;
+          top: 0;
+          z-index: 1000;
+          border-bottom: 1px solid var(--accents-2);
+      }
+
+      .logo {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--geist-foreground);
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          flex-shrink: 0;
+      }
+
+      .logo svg {
+          width: 32px;
+          height: 32px;
+          fill: var(--geist-foreground);
+      }
+
+      .nav-links {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          padding: 4px 0;
+          margin: 0 32px;
+          flex: 1;
+          justify-content: center;
+      }
+
+      .nav-links::-webkit-scrollbar {
+          display: none;
+      }
+
+      .nav-links a {
+          color: var(--geist-secondary);
+          text-decoration: none;
+          font-size: 13px;
+          font-weight: 400;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+          position: relative;
+      }
+
+      .nav-links a:after {
+          content: '';
+          position: absolute;
+          width: 0;
+          height: 1px;
+          bottom: -4px;
+          left: 0;
+          background-color: var(--geist-foreground);
+          transition: width 0.2s ease;
+      }
+
+      .nav-links a:hover {
+          color: var(--geist-foreground);
+      }
+
+      .nav-links a:hover:after {
+          width: 100%;
+      }
+
+      /* Theme Toggle (Reverted) */
+      .theme-toggle {
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 8px;
+          color: var(--geist-secondary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          transition: all 0.2s ease;
+      }
+
+      .theme-toggle:hover {
+          background: var(--accents-1);
+          color: var(--geist-foreground);
+      }
+
+      .theme-toggle svg {
+          width: 18px;
+          height: 18px;
+      }
+
+      .theme-toggle .sun-icon { display: none; }
+      .dark .theme-toggle .moon-icon { display: none; }
+      .dark .theme-toggle .sun-icon { display: block; }
+
+      .main-container {
+          width: 100%;
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 24px;
+      }
+
+      .btn-black {
+          background-color: var(--geist-foreground);
+          color: var(--geist-background) !important;
+          padding: 8px 16px;
+          border-radius: var(--radius-md);
+          text-decoration: none;
+          font-weight: 500;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          border: 1px solid var(--geist-foreground);
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+      }
+
+      .btn-black:hover {
+          background-color: transparent;
+          color: var(--geist-foreground) !important;
+      }
+
+      .btn-white {
+          background-color: var(--geist-background);
+          color: var(--geist-foreground) !important;
+          padding: 8px 16px;
+          border-radius: var(--radius-md);
+          text-decoration: none;
+          font-weight: 500;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          box-shadow: var(--shadow-border);
+          border: none;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+      }
+
+      .btn-white:hover {
+          box-shadow: 0 0 0 1px var(--geist-foreground);
+      }
+
+
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+          width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+          background: var(--geist-background);
+      }
+      ::-webkit-scrollbar-thumb {
+          background: var(--accents-2);
+          border-radius: 10px;
+      }
+
+
+
+
+      {% block extra_css %}{% endblock %}
+    </style>
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="{% url 'index' %}" class="logo">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <!-- Left Side: Brain Contours -->
+          <path
+            d="M12 22C12 22 10 22 8 20C6 18 5 16 5 13C5 10 7 8 9 8C10 8 11 8.5 12 9"
+          />
+          <path d="M12 18C10 18 9 17 9 15C9 13 10 12 12 12" />
+          <path d="M12 2C12 2 10 2 8 4C6 6 5 8 5 11" />
+          <!-- Right Side: Circuit Connections -->
+          <path d="M12 2V22" />
+          <path d="M12 5H17" />
+          <circle cx="19" cy="5" r="1.5" fill="currentColor" />
+          <path d="M12 9H19" />
+          <circle cx="21" cy="9" r="1.5" fill="currentColor" />
+          <path d="M12 13H17" />
+          <circle cx="19" cy="13" r="1.5" fill="currentColor" />
+          <path d="M12 17H20" />
+          <circle cx="22" cy="17" r="1.5" fill="currentColor" />
+          <path d="M12 20H16" />
+          <circle cx="18" cy="20" r="1.5" fill="currentColor" />
+        </svg>
+        <span>Agency</span>
+      </a>
+      <div class="nav-links fade-in">
+        <a href="{% url 'index' %}#engineering">Engineering</a>
+        <a href="{% url 'index' %}#design">Design</a>
+        <a href="{% url 'index' %}#marketing">Marketing</a>
+        <a href="{% url 'index' %}#product">Product</a>
+        <a href="{% url 'index' %}#project-management">Project Management</a>
+        <a href="{% url 'index' %}#spatial-computing">Spatial Computing</a>
+        <a href="{% url 'index' %}#specialized">Specialized</a>
+        <a href="{% url 'index' %}#strategy">Strategy</a>
+        <a href="{% url 'index' %}#support">Support</a>
+        <a href="{% url 'index' %}#testing">Testing</a>
+      </div>
+      <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+        <svg
+          class="moon-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <svg
+          class="sun-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+      </button>
+    </nav>
+
+    <main class="main-container">{% block content %}{% endblock %}</main>
+
+    <script>
+      // --- 1. Global Motion Config ---
+      gsap.registerPlugin(ScrollTrigger);
+
+      // --- 2. Lenis Smooth Scroll ---
+      const lenis = new Lenis({
+        duration: 1.2,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        orientation: "vertical",
+        gestureOrientation: "vertical",
+        smoothWheel: true,
+        wheelMultiplier: 1,
+        smoothTouch: false,
+        touchMultiplier: 2,
+        infinite: false,
+      });
+
+      function raf(time) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+      }
+      requestAnimationFrame(raf);
+
+      // Connect ScrollTrigger to Lenis
+      lenis.on("scroll", ScrollTrigger.update);
+      gsap.ticker.add((time) => {
+        lenis.raf(time * 1000);
+      });
+      gsap.ticker.lagSmoothing(0);
+
+      // --- 3. Spotlight & Cursor Interactions ---
+      const root = document.documentElement;
+      window.addEventListener("mousemove", (e) => {
+        root.style.setProperty(
+          "--mouse-x",
+          (e.clientX / window.innerWidth) * 100 + "%",
+        );
+        root.style.setProperty(
+          "--mouse-y",
+          (e.clientY / window.innerHeight) * 100 + "%",
+        );
+      });
+
+      // --- 4. Premium Reveal Transitions ---
+      const revealElements = document.querySelectorAll(".reveal");
+      revealElements.forEach((el) => {
+        gsap.from(el, {
+          scrollTrigger: {
+            trigger: el,
+            start: "top 85%",
+            toggleActions: "play none none none",
+          },
+          y: 30,
+          opacity: 0,
+          duration: 1,
+          ease: "expo.out",
+        });
+      });
+
+      // --- 5. Theme Toggle Logic ---
+      const themeToggle = document.getElementById("themeToggle");
+      if (themeToggle) {
+        themeToggle.addEventListener("click", () => {
+          root.classList.toggle("dark");
+          localStorage.setItem(
+            "theme",
+            root.classList.contains("dark") ? "dark" : "light",
+          );
+        });
+      }
+
+      // --- 6. Navbar Dynamics & Smooth Scroll Anchors ---
+      window.addEventListener("scroll", () => {
+        const nav = document.querySelector(".navbar");
+        if (window.scrollY > 20) {
+          nav.style.borderBottom = "1px solid var(--geist-border)";
+          nav.style.backgroundColor = "var(--geist-background)";
+          nav.style.backdropFilter = "saturate(180%) blur(12px)";
+        } else {
+          nav.style.borderBottom = "1px solid transparent";
+          nav.style.backgroundColor = "transparent";
+          nav.style.backdropFilter = "none";
+        }
+      });
+
+      // --- 7. Premium Anchor Scrolling ---
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href');
+          const target = document.querySelector(targetId);
+          
+          if (target) {
+            lenis.scrollTo(target, {
+              offset: -100, // Offset for sticky navbar
+              duration: 1.5,
+              easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            });
+
+            // Subtle Pulse Animation on Target
+            gsap.to(target, {
+              backgroundColor: "var(--spotlight-color)",
+              duration: 0.4,
+              yoyo: true,
+              repeat: 1,
+              ease: "power2.inOut"
+            });
+          }
+        });
+      });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

@@ -1,0 +1,353 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}{{ agent.name }} | AI Agency Portal{% endblock %}
+
+{% block extra_css %}
+.chat-page-wrapper {
+    padding-top: 40px;
+    padding-bottom: 80px;
+}
+
+.chat-container {
+    height: 720px;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--geist-background);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+}
+
+.chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 32px;
+    background: var(--geist-background);
+    border-bottom: 1px solid var(--accents-2);
+}
+
+.agent-info-mini h2 {
+    color: var(--geist-foreground);
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    margin-bottom: 2px;
+}
+
+.agent-status {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--geist-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #0070f3;
+    border-radius: 50%;
+}
+
+.messages-area {
+    flex-grow: 1;
+    padding: 40px 32px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    background-color: var(--accents-1);
+}
+
+.message {
+    max-width: 85%;
+    line-height: 1.6;
+    font-size: 15px;
+    color: var(--geist-foreground);
+    position: relative;
+}
+
+.content-box {
+    color: var(--geist-foreground);
+    word-wrap: break-word;
+}
+
+.message.user {
+    align-self: flex-end;
+    background: var(--geist-background);
+    padding: 12px 20px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-border);
+}
+
+.message.ai {
+    align-self: flex-start;
+    display: flex;
+    gap: 16px;
+}
+
+.ai-avatar {
+    width: 24px;
+    height: 24px;
+    background: var(--geist-foreground);
+    color: var(--geist-background);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    margin-top: 4px;
+    flex-shrink: 0;
+}
+
+.input-area-wrapper {
+    padding: 24px 32px 32px;
+    background: var(--geist-background);
+    border-top: 1px solid var(--accents-2);
+}
+
+.input-area {
+    display: flex;
+    gap: 12px;
+}
+
+.chat-input {
+    flex-grow: 1;
+    background: var(--geist-background);
+    border: 1px solid var(--accents-2);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    color: var(--geist-foreground);
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.chat-input:focus {
+    border-color: var(--geist-foreground);
+    box-shadow: 0 0 0 2px var(--geist-border);
+}
+
+
+.send-btn {
+    background-color: var(--geist-foreground);
+    border: none;
+    padding: 0 12px;
+    border-radius: var(--radius-md);
+    color: var(--geist-background);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.send-btn:hover {
+    opacity: 0.8;
+}
+
+pre {
+    background: #000;
+    padding: 20px;
+    border-radius: var(--radius-md);
+    margin: 16px 0;
+    overflow-x: auto;
+}
+
+code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: #fff;
+}
+
+.loading-indicator {
+    display: none;
+    padding-bottom: 12px;
+    font-size: 12px;
+    color: var(--geist-muted);
+    font-family: var(--font-mono);
+}
+{% endblock %}
+
+{% block content %}
+<div class="chat-page-wrapper">
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="agent-info-mini">
+                <h2>{{ agent.name }}</h2>
+                <div class="agent-status">
+                    <div class="status-dot"></div>
+                    Live Agent Session
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'index' %}" class="btn-white" style="font-size: 12px; padding: 6px 12px;">Close Console</a>
+            </div>
+        </div>
+
+        <div class="messages-area" id="messagesArea">
+            <div class="message ai">
+                <div class="ai-avatar">A</div>
+                <div class="content-box">
+                    Hello! I am your <strong>{{ agent.name }}</strong>. I've been initialized with the following mission:<br><br>
+                    {{ agent.description }}
+                </div>
+            </div>
+            
+            {% for msg in history %}
+            <div class="message {% if msg.role == 'user' %}user{% else %}ai{% endif %}">
+                {% if msg.role == 'assistant' %}<div class="ai-avatar">A</div>{% endif %}
+                <div class="content-box">
+                    {{ msg.content|linebreaksbr }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="input-area-wrapper">
+            <div class="loading-indicator" id="loadingIndicator">
+                AGENT: PROCESSING...
+            </div>
+            <form class="input-area" id="chatForm">
+                <input type="text" id="userInput" class="chat-input" placeholder="Enter instruction..." autocomplete="off">
+                <button type="submit" id="sendBtn" class="send-btn" aria-label="Send message">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                        <polyline points="10 17 15 12 10 7"></polyline>
+                        <line x1="15" y1="12" x2="3" y2="12"></line>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+    const chatForm = document.getElementById('chatForm');
+    const userInput = document.getElementById('userInput');
+    const messagesArea = document.getElementById('messagesArea');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const sendBtn = document.getElementById('sendBtn');
+
+    // Initialize chat history from server-side data
+    let chatHistory = [
+        {% for msg in history %}
+        { role: "{{ msg.role }}", content: `{{ msg.content|escapejs }}` },
+        {% endfor %}
+    ];
+    
+    const systemPrompt = `{{ agent.prompt|escapejs }}`;
+    const agentId = "{{ agent.id }}";
+    const category = "{{ agent.category }}";
+
+    // Scroll to bottom on load
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+
+    function appendMessage(role, content) {
+        const div = document.createElement('div');
+        div.className = `message ${role}`;
+        
+        let formattedContent = content.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+        formattedContent = formattedContent.replace(/\n/g, '<br>');
+        
+        if (role === 'ai') {
+            div.innerHTML = `
+                <div class="ai-avatar">A</div>
+                <div class="content-box">${formattedContent}</div>
+            `;
+        } else {
+            div.innerHTML = `<div class="content-box">${formattedContent}</div>`;
+        }
+        
+        messagesArea.appendChild(div);
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+
+        // --- Premium Message Entrance ---
+        gsap.from(div, {
+            y: 20,
+            opacity: 0,
+            duration: 0.8,
+            ease: "expo.out"
+        });
+    }
+
+    // --- Magnetic Buttons & Glassmorphism ---
+    const magneticElements = document.querySelectorAll('.send-btn, .btn-white');
+    magneticElements.forEach(el => {
+        el.addEventListener('mousemove', (e) => {
+            const rect = el.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            gsap.to(el, {
+                x: x * 0.4,
+                y: y * 0.4,
+                duration: 0.3,
+                ease: "power2.out"
+            });
+        });
+        el.addEventListener('mouseleave', () => {
+            gsap.to(el, { x: 0, y: 0, duration: 0.6, ease: "elastic.out(1, 0.3)" });
+        });
+    });
+
+    // --- Cinematic Container Reveal ---
+    gsap.from('.chat-container', {
+        y: 40,
+        opacity: 0,
+        duration: 1.2,
+        ease: "expo.out"
+    });
+
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = userInput.value.trim();
+        if (!text) return;
+
+        userInput.value = '';
+        appendMessage('user', text);
+        chatHistory.push({ role: 'user', content: text });
+        
+        loadingIndicator.style.display = 'block';
+        sendBtn.disabled = true;
+
+        try {
+            const response = await fetch('{% url "chat_api" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    messages: chatHistory,
+                    system_prompt: systemPrompt,
+                    agent_id: agentId,
+                    category: category
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.error) {
+                appendMessage('ai', `Error: ${data.error}`);
+            } else {
+                appendMessage('ai', data.response);
+                chatHistory.push({ role: 'assistant', content: data.response });
+            }
+        } catch (error) {
+            appendMessage('ai', 'Error connecting to the AI Agency service.');
+            console.error(error);
+        } finally {
+            loadingIndicator.style.display = 'none';
+            sendBtn.disabled = false;
+        }
+    });
+</script>
+{% endblock %}
+
