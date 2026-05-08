@@ -28,8 +28,8 @@ RUN mkdir -p /app/staticfiles
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
-# Expose port
-EXPOSE 8000
+# Make start.sh executable
+RUN chmod +x /app/start.sh
 
-# Run gunicorn
-CMD gunicorn ai_agency.wsgi:application --bind 0.0.0.0:$PORT
+# Run startup script
+CMD ["/app/start.sh"]
