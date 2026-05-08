@@ -54,11 +54,12 @@ A high-end, cinematic AI Agency portal built with **Django**, **GSAP**, and the 
    ```
 
 3. **Configure Environment Variables**
-   Create a `.env` file in the root directory:
+   Create a `.env` file in the root directory (only mandatory variable is NVIDIA_API_KEY):
    ```env
-   SECRET_KEY=your_secret_key
-   OPENAI_API_KEY=your_openai_key
-   DEBUG=True
+   NVIDIA_API_KEY=your_openai_key
+   SECRET_KEY=your_secret_key (Optional: generated automatically if not set)
+   DEBUG=False (Default is False for production)
+   NVIDIA_MODEL=meta/llama-3.1-405b-instruct (Optional default)
    ```
 
 4. **Initialize Database**
